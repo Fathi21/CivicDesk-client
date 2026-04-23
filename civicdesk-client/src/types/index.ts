@@ -61,6 +61,11 @@ export interface LoginDto {
   password: string
 }
 
+export interface ResidentLoginDto {
+  email: string
+  referenceNumber: string
+}
+
 export interface AuthTokenDto {
   token: string
   expiresAt: string

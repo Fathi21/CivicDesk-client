@@ -1,34 +1,54 @@
 import axios from 'axios'
-import type { ServiceRequest, CreateServiceRequestDto, UpdateStatusDto, ChatResponse, LoginDto, AuthTokenDto } from '../types'
+import type { ServiceRequest, CreateServiceRequestDto, UpdateStatusDto, ChatResponse, LoginDto, ResidentLoginDto, AuthTokenDto } from '../types'
 
-const TOKEN_KEY = 'civicdesk_token'
+const ADMIN_TOKEN_KEY = 'civicdesk_admin_token'
+const RESIDENT_TOKEN_KEY = 'civicdesk_resident_token'
 
 export const tokenStore = {
-  get: () => localStorage.getItem(TOKEN_KEY),
-  set: (token: string) => localStorage.setItem(TOKEN_KEY, token),
-  clear: () => localStorage.removeItem(TOKEN_KEY),
+  getAdmin: () => localStorage.getItem(ADMIN_TOKEN_KEY),
+  setAdmin: (token: string) => localStorage.setItem(ADMIN_TOKEN_KEY, token),
+  clearAdmin: () => localStorage.removeItem(ADMIN_TOKEN_KEY),
+  isAdmin: () => !!localStorage.getItem(ADMIN_TOKEN_KEY),
+  getResident: () => localStorage.getItem(RESIDENT_TOKEN_KEY),
+  setResident: (token: string) => localStorage.setItem(RESIDENT_TOKEN_KEY, token),
+  clearResident: () => localStorage.removeItem(RESIDENT_TOKEN_KEY),
+  isResident: () => !!localStorage.getItem(RESIDENT_TOKEN_KEY),
 }
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:5136/api',
 })
 
+// Attach admin token unless the call already has an Authorization header (resident calls set their own)
 client.interceptors.request.use(config => {
-  const token = tokenStore.get()
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  if (!config.headers.Authorization) {
+    const token = tokenStore.getAdmin()
+    if (token) config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
 
+const residentAuthHeader = () => {
+  const token = tokenStore.getResident()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 export const auth = {
   login: async (dto: LoginDto): Promise<AuthTokenDto> => {
     const res = await client.post<AuthTokenDto>('/auth/login', dto)
-    tokenStore.set(res.data.token)
+    tokenStore.setAdmin(res.data.token)
     return res.data
   },
   logout: () => {
-    tokenStore.clear()
+    tokenStore.clearAdmin()
+  },
+  residentLogin: async (dto: ResidentLoginDto): Promise<AuthTokenDto> => {
+    const res = await client.post<AuthTokenDto>('/auth/resident/login', dto)
+    tokenStore.setResident(res.data.token)
+    return res.data
+  },
+  residentLogout: () => {
+    tokenStore.clearResident()
   },
 }
 
@@ -45,6 +65,13 @@ export const serviceRequests = {
 
   getByReference: async (reference: string): Promise<ServiceRequest> => {
     const res = await client.get<ServiceRequest>(`/servicerequests/reference/${reference}`)
+    return res.data
+  },
+
+  getMy: async (): Promise<ServiceRequest[]> => {
+    const res = await client.get<ServiceRequest[]>('/servicerequests/my', {
+      headers: residentAuthHeader()
+    })
     return res.data
   },
 

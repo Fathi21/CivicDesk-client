@@ -11,7 +11,7 @@ type Tab = 'resident' | 'admin'
 export default function App() {
   const [tab, setTab] = useState<Tab>('resident')
   const [preFill, setPreFill] = useState<PreFill | undefined>()
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!tokenStore.get())
+  const [isAuthenticated, setIsAuthenticated] = useState(() => tokenStore.isAdmin())
 
   const handlePreFill = (pf: PreFill) => {
     setPreFill(pf)

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { serviceRequests } from '../services/api'
+import { serviceRequests, auth, tokenStore } from '../services/api'
 import { RequestType, RequestStatus } from '../types'
 import type { ServiceRequest, PreFill } from '../types'
 
@@ -24,6 +24,15 @@ const statusColour: Record<RequestStatus, string> = {
   [RequestStatus.Closed]: '#6b7280'
 }
 
+const typeLabel: Record<RequestType, string> = {
+  [RequestType.Pothole]: 'Pothole',
+  [RequestType.MissedBin]: 'Missed Bin',
+  [RequestType.NoiseComplaint]: 'Noise Complaint',
+  [RequestType.PlanningQuery]: 'Planning Query',
+  [RequestType.StreetLighting]: 'Street Lighting',
+  [RequestType.Other]: 'Other'
+}
+
 export default function ReportPage({ preFill, onClearPreFill }: Props) {
   const [type, setType] = useState<RequestType>(RequestType.Pothole)
   const [fullName, setFullName] = useState('')
@@ -39,6 +48,14 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
   const [trackError, setTrackError] = useState('')
   const [tracking, setTracking] = useState(false)
 
+  const [residentAuthed, setResidentAuthed] = useState(() => tokenStore.isResident())
+  const [myRequests, setMyRequests] = useState<ServiceRequest[]>([])
+  const [loadingMy, setLoadingMy] = useState(false)
+  const [myEmail, setMyEmail] = useState('')
+  const [myRef, setMyRef] = useState('')
+  const [myError, setMyError] = useState('')
+  const [signingIn, setSigningIn] = useState(false)
+
   useEffect(() => {
     if (!preFill) return
     const matched = Object.entries(RequestType).find(
@@ -47,6 +64,20 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
     if (matched) setType(matched[1] as RequestType)
     setDescription(preFill.description)
   }, [preFill])
+
+  useEffect(() => {
+    if (residentAuthed) fetchMyRequests()
+  }, [residentAuthed])
+
+  const fetchMyRequests = async () => {
+    setLoadingMy(true)
+    try {
+      const data = await serviceRequests.getMy()
+      setMyRequests(data)
+    } finally {
+      setLoadingMy(false)
+    }
+  }
 
   const handleSubmit = async () => {
     setError('')
@@ -84,6 +115,28 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
     } finally {
       setTracking(false)
     }
+  }
+
+  const handleResidentSignIn = async (e: { preventDefault(): void }) => {
+    e.preventDefault()
+    setMyError('')
+    setSigningIn(true)
+    try {
+      await auth.residentLogin({ email: myEmail, referenceNumber: myRef.trim() })
+      setResidentAuthed(true)
+    } catch {
+      setMyError('No request found matching that email and reference number.')
+    } finally {
+      setSigningIn(false)
+    }
+  }
+
+  const handleResidentSignOut = () => {
+    auth.residentLogout()
+    setResidentAuthed(false)
+    setMyRequests([])
+    setMyEmail('')
+    setMyRef('')
   }
 
   return (
@@ -194,19 +247,13 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
         </>
       )}
 
-      {/* Tracker */}
-      <div style={{
-        marginTop: '3rem', paddingTop: '2rem',
-        borderTop: '1px solid #e5e7eb'
-      }}>
+      {/* Track a Request */}
+      <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #e5e7eb' }}>
         <h2 style={{ marginTop: 0 }}>Track a Request</h2>
         <div style={{ display: 'flex', gap: 8 }}>
           <input value={trackRef} onChange={e => setTrackRef(e.target.value)}
             placeholder="e.g. POT-20260417-AB1C2D"
-            style={{
-              flex: 1, padding: '0.5rem', borderRadius: 6,
-              border: '1px solid #d1d5db'
-            }} />
+            style={{ flex: 1, padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db' }} />
           <button onClick={handleTrack} disabled={tracking} style={{
             background: '#1d4ed8', color: '#fff', border: 'none',
             borderRadius: 6, padding: '0.5rem 1rem', cursor: 'pointer'
@@ -246,6 +293,109 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
               </p>
             )}
           </div>
+        )}
+      </div>
+
+      {/* My Requests */}
+      <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #e5e7eb' }}>
+        <h2 style={{ marginTop: 0 }}>My Requests</h2>
+
+        {residentAuthed ? (
+          <>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between',
+              alignItems: 'center', marginBottom: '1rem'
+            }}>
+              <span style={{ fontSize: 14, color: '#6b7280' }}>
+                All requests linked to your account
+              </span>
+              <button onClick={handleResidentSignOut} style={{
+                background: 'none', border: '1px solid #d1d5db',
+                borderRadius: 6, padding: '0.35rem 0.75rem',
+                fontSize: 13, cursor: 'pointer', color: '#374151'
+              }}>
+                Sign out
+              </button>
+            </div>
+
+            {loadingMy ? (
+              <p style={{ color: '#6b7280', fontSize: 14 }}>Loading...</p>
+            ) : myRequests.length === 0 ? (
+              <p style={{ color: '#6b7280', fontSize: 14 }}>No requests found.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {myRequests.map(req => (
+                  <div key={req.id} style={{
+                    background: '#f9fafb', border: '1px solid #e5e7eb',
+                    borderRadius: 8, padding: '1rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600 }}>
+                        {req.referenceNumber}
+                      </span>
+                      <span style={{
+                        background: statusColour[req.status], color: '#fff',
+                        borderRadius: 999, padding: '0.2rem 0.6rem', fontSize: 12
+                      }}>
+                        {statusLabel[req.status]}
+                      </span>
+                    </div>
+                    <p style={{ margin: '0 0 0.2rem', fontSize: 14, color: '#374151' }}>
+                      <strong>{typeLabel[req.type]}</strong> — {req.addressOrLocation}
+                    </p>
+                    <p style={{ margin: '0 0 0.2rem', fontSize: 13, color: '#6b7280' }}>
+                      {req.description}
+                    </p>
+                    {req.adminNotes && (
+                      <p style={{ margin: '0.5rem 0 0', fontSize: 13, color: '#1d4ed8' }}>
+                        Note: {req.adminNotes}
+                      </p>
+                    )}
+                    <p style={{ margin: '0.4rem 0 0', fontSize: 12, color: '#9ca3af' }}>
+                      Submitted {new Date(req.createdAt).toLocaleDateString('en-GB')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <p style={{ margin: '0 0 1rem', fontSize: 14, color: '#6b7280' }}>
+              Sign in with your email and any reference number to view all your requests.
+            </p>
+            <form onSubmit={handleResidentSignIn}
+              style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <input
+                type="email"
+                value={myEmail}
+                onChange={e => setMyEmail(e.target.value)}
+                placeholder="Your email address"
+                required
+                style={{ padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 14 }}
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  value={myRef}
+                  onChange={e => setMyRef(e.target.value)}
+                  placeholder="Reference number (e.g. POT-20260423-AB1C2D)"
+                  required
+                  style={{ flex: 1, padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 14 }}
+                />
+                <button type="submit" disabled={signingIn} style={{
+                  background: '#1d4ed8', color: '#fff', border: 'none',
+                  borderRadius: 6, padding: '0.5rem 1rem',
+                  cursor: signingIn ? 'not-allowed' : 'pointer',
+                  fontSize: 14, opacity: signingIn ? 0.7 : 1, whiteSpace: 'nowrap'
+                }}>
+                  {signingIn ? '...' : 'Sign in'}
+                </button>
+              </div>
+              {myError && (
+                <p style={{ margin: 0, color: '#dc2626', fontSize: 13 }}>{myError}</p>
+              )}
+            </form>
+          </>
         )}
       </div>
     </div>
