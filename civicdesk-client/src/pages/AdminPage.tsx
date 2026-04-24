@@ -5,50 +5,52 @@ import type { ServiceRequest, UpdateStatusDto } from '../types'
 
 const statusLabel: Record<RequestStatus, string> = {
   [RequestStatus.Submitted]: 'Submitted',
-  [RequestStatus.InReview]: 'In Review',
-  [RequestStatus.InProgress]: 'In Progress',
-  [RequestStatus.Resolved]: 'Resolved',
-  [RequestStatus.Closed]: 'Closed'
+  [RequestStatus.InReview]:  'In Review',
+  [RequestStatus.InProgress]:'In Progress',
+  [RequestStatus.Resolved]:  'Resolved',
+  [RequestStatus.Closed]:    'Closed',
 }
 
 const statusColour: Record<RequestStatus, string> = {
   [RequestStatus.Submitted]: '#3b82f6',
-  [RequestStatus.InReview]: '#f59e0b',
-  [RequestStatus.InProgress]: '#8b5cf6',
-  [RequestStatus.Resolved]: '#22c55e',
-  [RequestStatus.Closed]: '#6b7280'
+  [RequestStatus.InReview]:  '#f59e0b',
+  [RequestStatus.InProgress]:'#8b5cf6',
+  [RequestStatus.Resolved]:  '#22c55e',
+  [RequestStatus.Closed]:    '#6b7280',
 }
 
 const typeLabel: Record<RequestType, string> = {
-  [RequestType.Pothole]: 'Pothole',
-  [RequestType.MissedBin]: 'Missed Bin',
+  [RequestType.Pothole]:        'Pothole',
+  [RequestType.MissedBin]:      'Missed Bin',
   [RequestType.NoiseComplaint]: 'Noise Complaint',
-  [RequestType.PlanningQuery]: 'Planning Query',
+  [RequestType.PlanningQuery]:  'Planning Query',
   [RequestType.StreetLighting]: 'Street Lighting',
-  [RequestType.Other]: 'Other'
+  [RequestType.Other]:          'Other',
 }
 
+const statuses = [
+  RequestStatus.Submitted,
+  RequestStatus.InReview,
+  RequestStatus.InProgress,
+  RequestStatus.Resolved,
+  RequestStatus.Closed,
+]
+
 export default function AdminPage() {
-  const [all, setAll] = useState<ServiceRequest[]>([])
-  const [filter, setFilter] = useState<RequestStatus | null>(null)
-  const [selected, setSelected] = useState<ServiceRequest | null>(null)
+  const [all, setAll]               = useState<ServiceRequest[]>([])
+  const [filter, setFilter]         = useState<RequestStatus | null>(null)
+  const [selected, setSelected]     = useState<ServiceRequest | null>(null)
   const [modalStatus, setModalStatus] = useState<RequestStatus>(RequestStatus.Submitted)
   const [modalNotes, setModalNotes] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [saving, setSaving]         = useState(false)
+  const [loading, setLoading]       = useState(true)
 
-  useEffect(() => {
-    fetchAll()
-  }, [])
+  useEffect(() => { fetchAll() }, [])
 
   const fetchAll = async () => {
     setLoading(true)
-    try {
-      const data = await serviceRequests.getAll()
-      setAll(data)
-    } finally {
-      setLoading(false)
-    }
+    try { setAll(await serviceRequests.getAll()) }
+    finally { setLoading(false) }
   }
 
   const openModal = (req: ServiceRequest) => {
@@ -57,10 +59,7 @@ export default function AdminPage() {
     setModalNotes(req.adminNotes ?? '')
   }
 
-  const closeModal = () => {
-    setSelected(null)
-    setModalNotes('')
-  }
+  const closeModal = () => { setSelected(null); setModalNotes('') }
 
   const handleSave = async () => {
     if (!selected) return
@@ -75,175 +74,175 @@ export default function AdminPage() {
     }
   }
 
-  const countByStatus = (status: RequestStatus) =>
-    all.filter(r => r.status === status).length
-
+  const count = (s: RequestStatus) => all.filter(r => r.status === s).length
   const filtered = filter !== null ? all.filter(r => r.status === filter) : all
 
-  const statuses = [
-    RequestStatus.Submitted,
-    RequestStatus.InReview,
-    RequestStatus.InProgress,
-    RequestStatus.Resolved,
-    RequestStatus.Closed
-  ]
-
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem 1rem' }}>
-      <h2 style={{ marginTop: 0 }}>Admin Dashboard</h2>
+    <div className="page">
+      <div className="container">
+        <h2 className="page-heading">Admin Dashboard</h2>
 
-      {/* Summary cards */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {statuses.map(s => (
-          <div key={s} onClick={() => setFilter(filter === s ? null : s)}
-            style={{
-              flex: '1 1 140px', background: filter === s ? statusColour[s] : '#f9fafb',
-              border: `1px solid ${statusColour[s]}`,
-              borderRadius: 8, padding: '1rem', cursor: 'pointer',
-              textAlign: 'center', transition: 'all 0.15s'
-            }}>
-            <div style={{
-              fontSize: 28, fontWeight: 700,
-              color: filter === s ? '#fff' : statusColour[s]
-            }}>
-              {countByStatus(s)}
-            </div>
-            <div style={{
-              fontSize: 13,
-              color: filter === s ? '#fff' : '#374151'
-            }}>
-              {statusLabel[s]}
-            </div>
-          </div>
-        ))}
-      </div>
+        {/* Stat cards */}
+        <div className="stat-grid">
+          {statuses.map(s => {
+            const active = filter === s
+            return (
+              <div
+                key={s}
+                className="stat-card"
+                onClick={() => setFilter(filter === s ? null : s)}
+                style={active
+                  ? { background: statusColour[s], border: `1.5px solid ${statusColour[s]}` }
+                  : { border: `1.5px solid ${statusColour[s]}` }
+                }
+              >
+                <div className="stat-num" style={{ color: active ? '#fff' : statusColour[s] }}>
+                  {count(s)}
+                </div>
+                <div className="stat-label" style={{ color: active ? '#fff' : 'var(--text-2)' }}>
+                  {statusLabel[s]}
+                </div>
+              </div>
+            )
+          })}
+        </div>
 
-      {/* Filter bar */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <button onClick={() => setFilter(null)} style={{
-          padding: '0.4rem 1rem', borderRadius: 999, cursor: 'pointer',
-          border: '1px solid #d1d5db', fontSize: 13,
-          background: filter === null ? '#1d4ed8' : '#fff',
-          color: filter === null ? '#fff' : '#374151'
-        }}>All</button>
-        {statuses.map(s => (
-          <button key={s} onClick={() => setFilter(filter === s ? null : s)} style={{
-            padding: '0.4rem 1rem', borderRadius: 999, cursor: 'pointer',
-            border: `1px solid ${statusColour[s]}`, fontSize: 13,
-            background: filter === s ? statusColour[s] : '#fff',
-            color: filter === s ? '#fff' : '#374151'
-          }}>
-            {statusLabel[s]}
+        {/* Filter pills */}
+        <div className="filter-bar">
+          <button
+            className="filter-pill"
+            onClick={() => setFilter(null)}
+            style={filter === null
+              ? { background: 'var(--primary)', color: '#fff', borderColor: 'var(--primary)' }
+              : {}}
+          >
+            All ({all.length})
           </button>
-        ))}
-      </div>
+          {statuses.map(s => (
+            <button
+              key={s}
+              className="filter-pill"
+              onClick={() => setFilter(filter === s ? null : s)}
+              style={filter === s
+                ? { background: statusColour[s], color: '#fff', borderColor: statusColour[s] }
+                : { borderColor: statusColour[s], color: statusColour[s] }}
+            >
+              {statusLabel[s]}
+            </button>
+          ))}
+        </div>
 
-      {/* Table */}
-      {loading ? (
-        <p style={{ color: '#6b7280' }}>Loading...</p>
-      ) : filtered.length === 0 ? (
-        <p style={{ color: '#6b7280' }}>No requests found.</p>
-      ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-            <thead>
-              <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
-                {['Reference', 'Type', 'Name', 'Location', 'Status', 'Date', ''].map(h => (
-                  <th key={h} style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
+        {loading ? (
+          <p className="empty-state">Loading…</p>
+        ) : filtered.length === 0 ? (
+          <p className="empty-state">No requests found.</p>
+        ) : (
+          <>
+            {/* Mobile cards */}
+            <div className="req-list">
               {filtered.map(req => (
-                <tr key={req.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                  <td style={{ padding: '0.75rem', fontFamily: 'monospace', fontSize: 13 }}>
-                    {req.referenceNumber}
-                  </td>
-                  <td style={{ padding: '0.75rem' }}>{typeLabel[req.type]}</td>
-                  <td style={{ padding: '0.75rem' }}>{req.fullName}</td>
-                  <td style={{ padding: '0.75rem', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {req.addressOrLocation}
-                  </td>
-                  <td style={{ padding: '0.75rem' }}>
-                    <span style={{
-                      background: statusColour[req.status], color: '#fff',
-                      borderRadius: 999, padding: '0.2rem 0.6rem', fontSize: 12
-                    }}>
+                <div key={req.id} className="req-card">
+                  <div className="req-card-top">
+                    <span className="req-card-ref monospace">{req.referenceNumber}</span>
+                    <span className="badge" style={{ background: statusColour[req.status] }}>
                       {statusLabel[req.status]}
                     </span>
-                  </td>
-                  <td style={{ padding: '0.75rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
-                    {new Date(req.createdAt).toLocaleDateString('en-GB')}
-                  </td>
-                  <td style={{ padding: '0.75rem' }}>
-                    <button onClick={() => openModal(req)} style={{
-                      background: '#1d4ed8', color: '#fff', border: 'none',
-                      borderRadius: 6, padding: '0.35rem 0.75rem',
-                      fontSize: 13, cursor: 'pointer'
-                    }}>
+                  </div>
+                  <p className="req-card-meta">{typeLabel[req.type]} · {req.fullName}</p>
+                  <p className="req-card-loc">{req.addressOrLocation}</p>
+                  <div className="req-card-footer">
+                    <span className="req-card-date">{new Date(req.createdAt).toLocaleDateString('en-GB')}</span>
+                    <button className="btn btn-primary btn-sm" onClick={() => openModal(req)}>
                       Update
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </div>
+
+            {/* Desktop table */}
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    {['Reference', 'Type', 'Name', 'Location', 'Status', 'Date', ''].map(h => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(req => (
+                    <tr key={req.id}>
+                      <td className="monospace text-xs">{req.referenceNumber}</td>
+                      <td>{typeLabel[req.type]}</td>
+                      <td>{req.fullName}</td>
+                      <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {req.addressOrLocation}
+                      </td>
+                      <td>
+                        <span className="badge" style={{ background: statusColour[req.status] }}>
+                          {statusLabel[req.status]}
+                        </span>
+                      </td>
+                      <td className="text-3 text-xs" style={{ whiteSpace: 'nowrap' }}>
+                        {new Date(req.createdAt).toLocaleDateString('en-GB')}
+                      </td>
+                      <td>
+                        <button className="btn btn-primary btn-sm" onClick={() => openModal(req)}>
+                          Update
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Modal */}
       {selected && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '1rem'
-        }}>
-          <div style={{
-            background: '#fff', borderRadius: 10, padding: '1.5rem',
-            width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto'
-          }}>
-            <h3 style={{ marginTop: 0 }}>{selected.referenceNumber}</h3>
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && closeModal()}>
+          <div className="modal">
+            <h3 className="modal-title">{selected.referenceNumber}</h3>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem', fontSize: 14 }}>
-              <div><strong>Type:</strong> {typeLabel[selected.type]}</div>
-              <div><strong>Name:</strong> {selected.fullName}</div>
-              <div><strong>Email:</strong> {selected.email}</div>
-              <div><strong>Location:</strong> {selected.addressOrLocation}</div>
-              <div><strong>Description:</strong> {selected.description}</div>
+            <div style={{ marginBottom: '1rem' }}>
+              <p className="modal-row"><strong>Type:</strong> {typeLabel[selected.type]}</p>
+              <p className="modal-row"><strong>Name:</strong> {selected.fullName}</p>
+              <p className="modal-row"><strong>Email:</strong> {selected.email}</p>
+              <p className="modal-row"><strong>Location:</strong> {selected.addressOrLocation}</p>
+              <p className="modal-row"><strong>Description:</strong> {selected.description}</p>
             </div>
 
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: '1rem' }}>
-              <span style={{ fontSize: 14, fontWeight: 500 }}>Status</span>
-              <select value={modalStatus} onChange={e => setModalStatus(Number(e.target.value))}
-                style={{ padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db' }}>
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label className="form-label">Status</label>
+              <select
+                className="form-select"
+                value={modalStatus}
+                onChange={e => setModalStatus(Number(e.target.value))}
+              >
                 {statuses.map(s => (
                   <option key={s} value={s}>{statusLabel[s]}</option>
                 ))}
               </select>
-            </label>
+            </div>
 
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: '1.5rem' }}>
-              <span style={{ fontSize: 14, fontWeight: 500 }}>Admin Notes</span>
-              <textarea value={modalNotes} onChange={e => setModalNotes(e.target.value)}
-                rows={3} placeholder="Internal notes visible to resident..."
-                style={{ padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db', resize: 'vertical' }} />
-            </label>
+            <div className="form-group">
+              <label className="form-label">Admin Notes</label>
+              <textarea
+                className="form-textarea"
+                value={modalNotes}
+                onChange={e => setModalNotes(e.target.value)}
+                rows={3}
+                placeholder="Internal notes visible to resident…"
+              />
+            </div>
 
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={closeModal} style={{
-                padding: '0.6rem 1.25rem', borderRadius: 6,
-                border: '1px solid #d1d5db', background: '#fff',
-                cursor: 'pointer', fontSize: 14
-              }}>Cancel</button>
-              <button onClick={handleSave} disabled={saving} style={{
-                padding: '0.6rem 1.25rem', borderRadius: 6,
-                background: '#1d4ed8', color: '#fff', border: 'none',
-                cursor: saving ? 'not-allowed' : 'pointer',
-                fontSize: 14, opacity: saving ? 0.7 : 1
-              }}>
-                {saving ? 'Saving...' : 'Save'}
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={closeModal}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
           </div>

@@ -10,51 +10,51 @@ interface Props {
 
 const statusLabel: Record<RequestStatus, string> = {
   [RequestStatus.Submitted]: 'Submitted',
-  [RequestStatus.InReview]: 'In Review',
-  [RequestStatus.InProgress]: 'In Progress',
-  [RequestStatus.Resolved]: 'Resolved',
-  [RequestStatus.Closed]: 'Closed'
+  [RequestStatus.InReview]:  'In Review',
+  [RequestStatus.InProgress]:'In Progress',
+  [RequestStatus.Resolved]:  'Resolved',
+  [RequestStatus.Closed]:    'Closed',
 }
 
 const statusColour: Record<RequestStatus, string> = {
   [RequestStatus.Submitted]: '#3b82f6',
-  [RequestStatus.InReview]: '#f59e0b',
-  [RequestStatus.InProgress]: '#8b5cf6',
-  [RequestStatus.Resolved]: '#22c55e',
-  [RequestStatus.Closed]: '#6b7280'
+  [RequestStatus.InReview]:  '#f59e0b',
+  [RequestStatus.InProgress]:'#8b5cf6',
+  [RequestStatus.Resolved]:  '#22c55e',
+  [RequestStatus.Closed]:    '#6b7280',
 }
 
 const typeLabel: Record<RequestType, string> = {
-  [RequestType.Pothole]: 'Pothole',
-  [RequestType.MissedBin]: 'Missed Bin',
+  [RequestType.Pothole]:        'Pothole',
+  [RequestType.MissedBin]:      'Missed Bin',
   [RequestType.NoiseComplaint]: 'Noise Complaint',
-  [RequestType.PlanningQuery]: 'Planning Query',
+  [RequestType.PlanningQuery]:  'Planning Query',
   [RequestType.StreetLighting]: 'Street Lighting',
-  [RequestType.Other]: 'Other'
+  [RequestType.Other]:          'Other',
 }
 
 export default function ReportPage({ preFill, onClearPreFill }: Props) {
-  const [type, setType] = useState<RequestType>(RequestType.Pothole)
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [addressOrLocation, setAddressOrLocation] = useState('')
-  const [description, setDescription] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState<ServiceRequest | null>(null)
-  const [error, setError] = useState('')
+  const [type, setType]                   = useState<RequestType>(RequestType.Pothole)
+  const [fullName, setFullName]           = useState('')
+  const [email, setEmail]                 = useState('')
+  const [addressOrLocation, setAddress]   = useState('')
+  const [description, setDescription]     = useState('')
+  const [submitting, setSubmitting]       = useState(false)
+  const [submitted, setSubmitted]         = useState<ServiceRequest | null>(null)
+  const [error, setError]                 = useState('')
 
-  const [trackRef, setTrackRef] = useState('')
-  const [tracked, setTracked] = useState<ServiceRequest | null>(null)
+  const [trackRef, setTrackRef]     = useState('')
+  const [tracked, setTracked]       = useState<ServiceRequest | null>(null)
   const [trackError, setTrackError] = useState('')
-  const [tracking, setTracking] = useState(false)
+  const [tracking, setTracking]     = useState(false)
 
   const [residentAuthed, setResidentAuthed] = useState(() => tokenStore.isResident())
-  const [myRequests, setMyRequests] = useState<ServiceRequest[]>([])
-  const [loadingMy, setLoadingMy] = useState(false)
-  const [myEmail, setMyEmail] = useState('')
-  const [myRef, setMyRef] = useState('')
-  const [myError, setMyError] = useState('')
-  const [signingIn, setSigningIn] = useState(false)
+  const [myRequests, setMyRequests]         = useState<ServiceRequest[]>([])
+  const [loadingMy, setLoadingMy]           = useState(false)
+  const [myEmail, setMyEmail]               = useState('')
+  const [myRef, setMyRef]                   = useState('')
+  const [myError, setMyError]               = useState('')
+  const [signingIn, setSigningIn]           = useState(false)
 
   useEffect(() => {
     if (!preFill) return
@@ -89,10 +89,7 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
     try {
       const result = await serviceRequests.create({ type, fullName, email, addressOrLocation, description })
       setSubmitted(result)
-      setFullName('')
-      setEmail('')
-      setAddressOrLocation('')
-      setDescription('')
+      setFullName(''); setEmail(''); setAddress(''); setDescription('')
       setType(RequestType.Pothole)
       onClearPreFill()
     } catch {
@@ -103,13 +100,11 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
   }
 
   const handleTrack = async () => {
-    setTrackError('')
-    setTracked(null)
+    setTrackError(''); setTracked(null)
     if (!trackRef.trim()) return
     setTracking(true)
     try {
-      const result = await serviceRequests.getByReference(trackRef.trim())
-      setTracked(result)
+      setTracked(await serviceRequests.getByReference(trackRef.trim()))
     } catch {
       setTrackError('No request found with that reference number.')
     } finally {
@@ -119,8 +114,7 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
 
   const handleResidentSignIn = async (e: { preventDefault(): void }) => {
     e.preventDefault()
-    setMyError('')
-    setSigningIn(true)
+    setMyError(''); setSigningIn(true)
     try {
       await auth.residentLogin({ email: myEmail, referenceNumber: myRef.trim() })
       setResidentAuthed(true)
@@ -135,69 +129,45 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
     auth.residentLogout()
     setResidentAuthed(false)
     setMyRequests([])
-    setMyEmail('')
-    setMyRef('')
+    setMyEmail(''); setMyRef('')
   }
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto', padding: '2rem 1rem' }}>
+    <div className="page page-narrow">
 
       {/* Pre-fill banner */}
       {preFill && (
-        <div style={{
-          background: '#eff6ff', border: '1px solid #bfdbfe',
-          borderRadius: 8, padding: '0.75rem 1rem',
-          marginBottom: '1.5rem', display: 'flex',
-          justifyContent: 'space-between', alignItems: 'center'
-        }}>
-          <span style={{ color: '#1d4ed8', fontSize: 14 }}>
-            ✦ Form pre-filled by CivicAssist
-          </span>
-          <button onClick={onClearPreFill} style={{
-            background: 'none', border: 'none',
-            color: '#1d4ed8', cursor: 'pointer', fontSize: 14
-          }}>Clear</button>
+        <div className="prefill-banner">
+          <span className="prefill-banner-text">✦ Form pre-filled by CivicAssist</span>
+          <button className="prefill-clear" onClick={onClearPreFill}>Clear</button>
         </div>
       )}
 
-      {/* Submission success */}
+      {/* ── Report an Issue ── */}
       {submitted ? (
-        <div style={{
-          background: '#f0fdf4', border: '1px solid #bbf7d0',
-          borderRadius: 8, padding: '1.5rem', textAlign: 'center'
-        }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>✓</div>
-          <h2 style={{ margin: '0 0 0.5rem' }}>Request Submitted</h2>
+        <div className="success-box">
+          <div className="success-icon">✓</div>
+          <h2>Request Submitted</h2>
           <p style={{ margin: '0 0 0.25rem', color: '#374151' }}>
             Reference: <strong>{submitted.referenceNumber}</strong>
           </p>
-          <p style={{ margin: '0 0 1.5rem', color: '#6b7280', fontSize: 14 }}>
+          <p className="text-sm text-3" style={{ marginBottom: '1.5rem' }}>
             Confirmation sent to {submitted.email}
           </p>
-          <button onClick={() => setSubmitted(null)} style={{
-            background: '#22c55e', color: '#fff', border: 'none',
-            borderRadius: 6, padding: '0.6rem 1.5rem', cursor: 'pointer'
-          }}>
+          <button className="btn btn-primary" onClick={() => setSubmitted(null)}>
             Submit Another
           </button>
         </div>
       ) : (
         <>
-          <h2 style={{ marginTop: 0 }}>Report an Issue</h2>
+          <h2 className="page-heading">Report an Issue</h2>
 
-          {error && (
-            <div style={{
-              background: '#fef2f2', border: '1px solid #fecaca',
-              borderRadius: 6, padding: '0.75rem', marginBottom: '1rem',
-              color: '#dc2626', fontSize: 14
-            }}>{error}</div>
-          )}
+          {error && <div className="alert alert-error" style={{ marginBottom: '1rem' }}>{error}</div>}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 14, fontWeight: 500 }}>Request Type</span>
-              <select value={type} onChange={e => setType(Number(e.target.value))}
-                style={{ padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db' }}>
+          <div className="form-stack">
+            <div className="form-group">
+              <label className="form-label">Request Type</label>
+              <select className="form-select" value={type} onChange={e => setType(Number(e.target.value))}>
                 <option value={RequestType.Pothole}>Pothole</option>
                 <option value={RequestType.MissedBin}>Missed Bin Collection</option>
                 <option value={RequestType.NoiseComplaint}>Noise Complaint</option>
@@ -205,153 +175,103 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
                 <option value={RequestType.StreetLighting}>Street Lighting Fault</option>
                 <option value={RequestType.Other}>Other</option>
               </select>
-            </label>
+            </div>
 
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 14, fontWeight: 500 }}>Full Name</span>
-              <input value={fullName} onChange={e => setFullName(e.target.value)}
-                placeholder="Jane Smith"
-                style={{ padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db' }} />
-            </label>
+            <div className="form-group">
+              <label className="form-label">Full Name</label>
+              <input className="form-input" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Jane Smith" />
+            </div>
 
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 14, fontWeight: 500 }}>Email Address</span>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="jane@example.com"
-                style={{ padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db' }} />
-            </label>
+            <div className="form-group">
+              <label className="form-label">Email Address</label>
+              <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="jane@example.com" />
+            </div>
 
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 14, fontWeight: 500 }}>Address or Location of Issue</span>
-              <input value={addressOrLocation} onChange={e => setAddressOrLocation(e.target.value)}
-                placeholder="e.g. Junction of High Street and Park Road, Cardiff"
-                style={{ padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db' }} />
-            </label>
+            <div className="form-group">
+              <label className="form-label">Address or Location of Issue</label>
+              <input className="form-input" value={addressOrLocation} onChange={e => setAddress(e.target.value)} placeholder="e.g. Junction of High Street and Park Road, Cardiff" />
+            </div>
 
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 14, fontWeight: 500 }}>Description</span>
-              <textarea value={description} onChange={e => setDescription(e.target.value)}
-                rows={4} placeholder="Describe the issue in as much detail as possible..."
-                style={{ padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db', resize: 'vertical' }} />
-            </label>
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <textarea className="form-textarea" value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe the issue in as much detail as possible…" rows={4} />
+            </div>
 
-            <button onClick={handleSubmit} disabled={submitting} style={{
-              background: '#1d4ed8', color: '#fff', border: 'none',
-              borderRadius: 6, padding: '0.75rem', fontSize: 16,
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              opacity: submitting ? 0.7 : 1
-            }}>
-              {submitting ? 'Submitting...' : 'Submit Request'}
+            <button className="btn btn-primary btn-full" onClick={handleSubmit} disabled={submitting}>
+              {submitting ? 'Submitting…' : 'Submit Request'}
             </button>
           </div>
         </>
       )}
 
-      {/* Track a Request */}
-      <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #e5e7eb' }}>
-        <h2 style={{ marginTop: 0 }}>Track a Request</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input value={trackRef} onChange={e => setTrackRef(e.target.value)}
+      {/* ── Track a Request ── */}
+      <div className="section">
+        <h2 className="page-heading">Track a Request</h2>
+        <div className="row">
+          <input
+            className="form-input"
+            value={trackRef}
+            onChange={e => setTrackRef(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleTrack()}
             placeholder="e.g. POT-20260417-AB1C2D"
-            style={{ flex: 1, padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db' }} />
-          <button onClick={handleTrack} disabled={tracking} style={{
-            background: '#1d4ed8', color: '#fff', border: 'none',
-            borderRadius: 6, padding: '0.5rem 1rem', cursor: 'pointer'
-          }}>
-            {tracking ? '...' : 'Track'}
+          />
+          <button className="btn btn-primary flex-none" onClick={handleTrack} disabled={tracking}>
+            {tracking ? '…' : 'Track'}
           </button>
         </div>
 
-        {trackError && (
-          <p style={{ color: '#dc2626', fontSize: 14, marginTop: 8 }}>{trackError}</p>
-        )}
+        {trackError && <p className="text-sm" style={{ color: 'var(--error)', marginTop: 8 }}>{trackError}</p>}
 
         {tracked && (
-          <div style={{
-            marginTop: '1rem', background: '#f9fafb',
-            border: '1px solid #e5e7eb', borderRadius: 8, padding: '1rem'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <strong>{tracked.referenceNumber}</strong>
-              <span style={{
-                background: statusColour[tracked.status],
-                color: '#fff', borderRadius: 999,
-                padding: '0.2rem 0.75rem', fontSize: 13
-              }}>
+          <div className="track-card">
+            <div className="track-card-top">
+              <span className="track-card-ref">{tracked.referenceNumber}</span>
+              <span className="badge" style={{ background: statusColour[tracked.status] }}>
                 {statusLabel[tracked.status]}
               </span>
             </div>
-            <p style={{ margin: '0 0 0.25rem', fontSize: 14, color: '#374151' }}>
-              {tracked.addressOrLocation}
-            </p>
-            <p style={{ margin: '0 0 0.25rem', fontSize: 14, color: '#6b7280' }}>
-              {tracked.description}
-            </p>
+            <p className="text-sm text-2 mb-1">{tracked.addressOrLocation}</p>
+            <p className="text-sm text-3">{tracked.description}</p>
             {tracked.adminNotes && (
-              <p style={{ margin: '0.5rem 0 0', fontSize: 14, color: '#1d4ed8' }}>
-                Note: {tracked.adminNotes}
-              </p>
+              <p className="track-card-note">Note: {tracked.adminNotes}</p>
             )}
           </div>
         )}
       </div>
 
-      {/* My Requests */}
-      <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #e5e7eb' }}>
-        <h2 style={{ marginTop: 0 }}>My Requests</h2>
+      {/* ── My Requests ── */}
+      <div className="section">
+        <h2 className="page-heading">My Requests</h2>
 
         {residentAuthed ? (
           <>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between',
-              alignItems: 'center', marginBottom: '1rem'
-            }}>
-              <span style={{ fontSize: 14, color: '#6b7280' }}>
-                All requests linked to your account
-              </span>
-              <button onClick={handleResidentSignOut} style={{
-                background: 'none', border: '1px solid #d1d5db',
-                borderRadius: 6, padding: '0.35rem 0.75rem',
-                fontSize: 13, cursor: 'pointer', color: '#374151'
-              }}>
-                Sign out
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <span className="text-sm text-3">All requests linked to your account</span>
+              <button className="btn btn-secondary btn-sm" onClick={handleResidentSignOut}>Sign out</button>
             </div>
 
             {loadingMy ? (
-              <p style={{ color: '#6b7280', fontSize: 14 }}>Loading...</p>
+              <p className="empty-state">Loading…</p>
             ) : myRequests.length === 0 ? (
-              <p style={{ color: '#6b7280', fontSize: 14 }}>No requests found.</p>
+              <p className="empty-state">No requests found.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div>
                 {myRequests.map(req => (
-                  <div key={req.id} style={{
-                    background: '#f9fafb', border: '1px solid #e5e7eb',
-                    borderRadius: 8, padding: '1rem'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600 }}>
-                        {req.referenceNumber}
-                      </span>
-                      <span style={{
-                        background: statusColour[req.status], color: '#fff',
-                        borderRadius: 999, padding: '0.2rem 0.6rem', fontSize: 12
-                      }}>
+                  <div key={req.id} className="my-card">
+                    <div className="my-card-top">
+                      <span className="my-card-ref">{req.referenceNumber}</span>
+                      <span className="badge" style={{ background: statusColour[req.status] }}>
                         {statusLabel[req.status]}
                       </span>
                     </div>
-                    <p style={{ margin: '0 0 0.2rem', fontSize: 14, color: '#374151' }}>
+                    <p className="text-sm text-2 mb-1">
                       <strong>{typeLabel[req.type]}</strong> — {req.addressOrLocation}
                     </p>
-                    <p style={{ margin: '0 0 0.2rem', fontSize: 13, color: '#6b7280' }}>
-                      {req.description}
-                    </p>
+                    <p className="text-xs text-3">{req.description}</p>
                     {req.adminNotes && (
-                      <p style={{ margin: '0.5rem 0 0', fontSize: 13, color: '#1d4ed8' }}>
-                        Note: {req.adminNotes}
-                      </p>
+                      <p className="my-card-note">Note: {req.adminNotes}</p>
                     )}
-                    <p style={{ margin: '0.4rem 0 0', fontSize: 12, color: '#9ca3af' }}>
+                    <p className="my-card-date">
                       Submitted {new Date(req.createdAt).toLocaleDateString('en-GB')}
                     </p>
                   </div>
@@ -361,43 +281,29 @@ export default function ReportPage({ preFill, onClearPreFill }: Props) {
           </>
         ) : (
           <>
-            <p style={{ margin: '0 0 1rem', fontSize: 14, color: '#6b7280' }}>
+            <p className="text-sm text-2" style={{ marginBottom: '1rem' }}>
               Sign in with your email and any reference number to view all your requests.
             </p>
-            <form onSubmit={handleResidentSignIn}
-              style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <input
-                type="email"
-                value={myEmail}
-                onChange={e => setMyEmail(e.target.value)}
-                placeholder="Your email address"
-                required
-                style={{ padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 14 }}
-              />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  value={myRef}
-                  onChange={e => setMyRef(e.target.value)}
-                  placeholder="Reference number (e.g. POT-20260423-AB1C2D)"
-                  required
-                  style={{ flex: 1, padding: '0.5rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 14 }}
-                />
-                <button type="submit" disabled={signingIn} style={{
-                  background: '#1d4ed8', color: '#fff', border: 'none',
-                  borderRadius: 6, padding: '0.5rem 1rem',
-                  cursor: signingIn ? 'not-allowed' : 'pointer',
-                  fontSize: 14, opacity: signingIn ? 0.7 : 1, whiteSpace: 'nowrap'
-                }}>
-                  {signingIn ? '...' : 'Sign in'}
-                </button>
+            <form onSubmit={handleResidentSignIn} className="form-stack">
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <input type="email" className="form-input" value={myEmail} onChange={e => setMyEmail(e.target.value)} placeholder="Your email address" required />
               </div>
-              {myError && (
-                <p style={{ margin: 0, color: '#dc2626', fontSize: 13 }}>{myError}</p>
-              )}
+              <div className="form-group">
+                <label className="form-label">Reference Number</label>
+                <div className="row">
+                  <input className="form-input" value={myRef} onChange={e => setMyRef(e.target.value)} placeholder="e.g. POT-20260423-AB1C2D" required />
+                  <button type="submit" className="btn btn-primary flex-none" disabled={signingIn}>
+                    {signingIn ? '…' : 'Sign in'}
+                  </button>
+                </div>
+              </div>
+              {myError && <div className="alert alert-error">{myError}</div>}
             </form>
           </>
         )}
       </div>
+
     </div>
   )
 }

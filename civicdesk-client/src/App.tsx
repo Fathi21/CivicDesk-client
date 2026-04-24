@@ -25,67 +25,47 @@ export default function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="app">
 
-      {/* Header */}
-      <header style={{
-        background: '#1d4ed8', color: '#fff',
-        padding: '0 1.5rem', display: 'flex',
-        alignItems: 'center', justifyContent: 'space-between',
-        height: 56
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 20 }}>🏛️</span>
-          <span style={{ fontWeight: 700, fontSize: 18 }}>CivicDesk</span>
-          <span style={{ opacity: 0.7, fontSize: 13, marginLeft: 4 }}>Cardiff Council</span>
+      <header className="header">
+        <div className="header-brand">
+          <span className="header-brand-icon">🏛️</span>
+          <span className="header-brand-name">CivicDesk</span>
+          <span className="header-brand-sep">·</span>
+          <span className="header-brand-sub">Cardiff Council</span>
         </div>
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          {(['resident', 'admin'] as Tab[]).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              background: tab === t ? 'rgba(255,255,255,0.2)' : 'transparent',
-              color: '#fff', border: 'none', borderRadius: 6,
-              padding: '0.4rem 0.875rem', cursor: 'pointer',
-              fontSize: 14, fontWeight: tab === t ? 600 : 400,
-              textTransform: 'capitalize'
-            }}>
-              {t === 'resident' ? 'Resident Portal' : 'Admin'}
-            </button>
-          ))}
+
+        <nav className="header-nav">
+          <button
+            className={`nav-btn${tab === 'resident' ? ' active' : ''}`}
+            onClick={() => setTab('resident')}
+          >
+            Resident
+          </button>
+          <button
+            className={`nav-btn${tab === 'admin' ? ' active' : ''}`}
+            onClick={() => setTab('admin')}
+          >
+            Admin
+          </button>
           {isAuthenticated && (
-            <button onClick={handleLogout} style={{
-              background: 'rgba(255,255,255,0.1)', color: '#fff',
-              border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6,
-              padding: '0.4rem 0.875rem', cursor: 'pointer',
-              fontSize: 13, marginLeft: 8
-            }}>
+            <button className="nav-signout" onClick={handleLogout}>
               Sign out
             </button>
           )}
         </nav>
       </header>
 
-      {/* Hero */}
       {tab === 'resident' && (
-        <div style={{
-          background: '#1e40af', color: '#fff',
-          padding: '2.5rem 1.5rem', textAlign: 'center'
-        }}>
-          <h1 style={{ margin: '0 0 0.5rem', fontSize: 28 }}>
-            Cardiff Council Self-Service Portal
-          </h1>
-          <p style={{ margin: 0, opacity: 0.85, fontSize: 16 }}>
-            Report issues, submit service requests and track progress online.
-          </p>
+        <div className="hero">
+          <h1 className="hero-title">Cardiff Council Self-Service Portal</h1>
+          <p className="hero-sub">Report issues, submit service requests and track progress online.</p>
         </div>
       )}
 
-      {/* Main */}
-      <main>
+      <main style={{ flex: 1 }}>
         {tab === 'resident' ? (
-          <ReportPage
-            preFill={preFill}
-            onClearPreFill={() => setPreFill(undefined)}
-          />
+          <ReportPage preFill={preFill} onClearPreFill={() => setPreFill(undefined)} />
         ) : isAuthenticated ? (
           <AdminPage />
         ) : (
@@ -93,13 +73,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer style={{
-        textAlign: 'center', padding: '2rem',
-        color: '#9ca3af', fontSize: 13,
-        borderTop: '1px solid #e5e7eb', marginTop: '2rem'
-      }}>
-        © 2026 Cardiff Council · CivicDesk Demo
+      <footer className="footer">
+        © 2026 Cardiff Council · CivicDesk
       </footer>
 
       <ChatWidget onPreFill={handlePreFill} />
