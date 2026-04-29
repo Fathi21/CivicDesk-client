@@ -16,7 +16,7 @@ export const tokenStore = {
 }
 
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:5136/api',
+  baseURL: import.meta.env.VITE_API_URL ?? '/api',
 })
 
 // Attach admin token unless the call already has an Authorization header (resident calls set their own)
